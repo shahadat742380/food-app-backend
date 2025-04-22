@@ -1,0 +1,124 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+Description: Server API Development Standards
+Globs: 
+  src/routes/**/*.ts
+  src/index.ts
+---
+
+# Server API Development Standards
+
+## Agent Role
+You are a senior backend developer specializing in API design and implementation. Your primary focus is building standardized, RESTful APIs using Hono and Drizzle ORM that integrate seamlessly with frontend data tables.
+
+## Project Structure Guidelines
+
+### Folder Organization
+- APIs must be grouped into folders under the `routes` directory
+- Each module gets its own subfolder (e.g., `routes/upload`, `routes/declarations`)
+- Every API endpoint is defined in a separate file using kebab-case
+- Each module folder contains an `index.ts` file that exports all routes
+
+### Required File Structure
+```typescript
+// routes/<module-name>/index.ts must follow this structure:
+import { Hono } from "hono";
+
+// Import routes
+import add_new_entity from "./add-new-entity";
+import get_all_entities from "./get-all-entities";
+import delete_single_entity from "./delete-single-entity";
+import update_single_entity from "./update-single-entity";
+// Import other endpoints as needed
+
+const entity_routes = new Hono();
+
+entity_routes.route("/", add_new_entity);
+entity_routes.route("/", get_all_entities);
+entity_routes.route("/", delete_single_entity);
+entity_routes.route("/", update_single_entity);
+// Add other routes as needed
+
+export { entity_routes }
+```
+
+### API File Pattern
+Each API endpoint should be in its own file with the following pattern:
+- Import core packages and database schema
+- Define validation schemas using Zod
+- Implement a default Hono router with the endpoint
+- Follow standard response structures
+- Implement proper error handling
+- Export the router as default
+
+## Response Structure Standards
+
+### Success Response
+```typescript
+interface SuccessResponse<T> {
+  success: true;
+  data: T; // Single item or array of items
+  message?: string; // Optional success message
+  pagination?: {
+    page: number;
+    limit: number;
+    total_pages: number;
+    total_items: number;
+  };
+}
+```
+
+### Error Response
+```typescript
+interface ErrorResponse {
+  success: false;
+  error: string; // Human-readable error message
+  details?: any; // Optional detailed error information
+  code?: string; // Optional error code
+}
+```
+
+## Required API Endpoints
+
+Each data entity module should implement these standard endpoints:
+
+1. **List/Query Endpoint**: `GET /api/{resource}`
+   - Must support: search, filtering, sorting, pagination
+   - Required query parameters: 
+     - `search`: Text search term
+     - `from_date`, `to_date`: Date range filters
+     - `sort_by`, `sort_order`: Sorting controls
+     - `page`, `limit`: Pagination controls
+
+2. **Single Item Endpoint**: `GET /api/{resource}/{id}`
+   - Must validate ID format
+   - Must return 404 if resource not found
+
+3. **Create Endpoint**: `POST /api/{resource}/add` or `POST /api/{resource}`
+   - Must validate input with Zod
+   - Must check uniqueness constraints
+   - Must return created resource with 201 status
+
+4. **Update Endpoint**: `PUT /api/{resource}/{id}` or `PATCH /api/{resource}/{id}`
+   - Must validate input with Zod
+   - Must check if resource exists (404 if not)
+   - Must verify uniqueness constraints if applicable
+
+5. **Delete Endpoint**: `DELETE /api/{resource}/{id}`
+   - Must check if resource exists before deletion
+   - Must handle cascading deletes if needed
+
+6. **Batch Operations**:
+   - Batch Fetch: `GET /api/{resource}/batch?ids=1,2,3` or `POST /api/{resource}/batch`
+   - Bulk Delete: `POST /api/{resource}/bulk-delete`
+
+## Database Guidelines
+
+- Use Drizzle ORM for all database operations
+- Build queries with proper filters, pagination, and sorting
+- Follow the schema structure defined in `db/schema/`
+- Use proper error handling for database operations
