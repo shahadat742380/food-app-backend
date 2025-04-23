@@ -7,6 +7,7 @@ import { products } from "@/db/schema/tbl-products";
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().optional(),
+  about: z.string().optional(),
   price: z.number().positive("Price must be a positive number"),
   imageUrl: z.string().url("Invalid image URL").optional(),
   isPopular: z.boolean().optional().default(false),
@@ -30,6 +31,7 @@ createProduct.post("/", zValidator("json", productSchema), async (c) => {
       .values({
         name: body.name,
         description: body.description,
+        about: body.about,
         price: body.price.toString(), // Convert number to string for decimal type
         imageUrl: body.imageUrl,
         isPopular: body.isPopular,

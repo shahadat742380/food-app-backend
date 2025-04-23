@@ -49,17 +49,24 @@ addFavorite.post("/", async (c) => {
       )
       .limit(1);
 
+    // If product is already in favorites, remove it
     if (existingFavorite && existingFavorite.length > 0) {
+      await db
+        .delete(favorites)
+        .where(
+          and(eq(favorites.userId, user.id), eq(favorites.productId, productId))
+        );
+
       return c.json(
         {
-          success: false,
-          error: "Product is already in favorites",
+          success: true,
+          message: "Product removed from favorites",
         },
-        409
-      ); // Conflict
+        200
+      );
     }
 
-    // Add product to favorites
+    // If product is not in favorites, add it
     const result = await db
       .insert(favorites)
       .values({
@@ -78,7 +85,7 @@ addFavorite.post("/", async (c) => {
       201
     );
   } catch (error) {
-    console.error("Error adding to favorites:", error);
+    console.error("Error toggling favorite status:", error);
 
     if (error instanceof z.ZodError) {
       return c.json(
@@ -94,7 +101,7 @@ addFavorite.post("/", async (c) => {
     return c.json(
       {
         success: false,
-        error: "Failed to add to favorites",
+        error: "Failed to toggle favorite status",
         details: error instanceof Error ? error.message : String(error),
       },
       500

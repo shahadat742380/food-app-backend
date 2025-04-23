@@ -15,6 +15,13 @@
       "when": 1745388161067,
       "tag": "0001_puzzling_paladin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1745391543112,
+      "tag": "0002_sudden_vermin",
+      "breakpoints": true
     }
   ]
 }

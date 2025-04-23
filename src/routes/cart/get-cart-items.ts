@@ -23,6 +23,7 @@ getCartItems.get("/", async (c) => {
         product: {
           id: products.id,
           name: products.name,
+          description: products.description,
           price: products.price,
           imageUrl: products.imageUrl,
         },
