@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { desc, eq, ilike, asc, count, and } from "drizzle-orm";
+import { desc, eq, ilike, asc, count } from "drizzle-orm";
 import { products } from "@/db/schema/tbl-products";
+import { SQL } from "drizzle-orm";
 
 // Define validation schema for query parameters
 const querySchema = z.object({
@@ -26,66 +27,51 @@ getAllProducts.get("/", async (c) => {
     // Get database instance from context
     const db = c.get("db");
 
-    // Execute query with filters, sorting and pagination
-    let data;
+    // Build base query - fix the type issue by using a simpler approach
+    const conditions: SQL[] = [];
 
-    // Define base select query
-    const selectQuery = db.select().from(products);
-
-    // Apply filters
+    // Add search filter if provided
     if (search) {
-      // Apply search filter
-      data = await selectQuery
-        .where(ilike(products.name, `%${search}%`))
-        .orderBy(
-          sort === "name"
-            ? order === "asc"
-              ? asc(products.name)
-              : desc(products.name)
-            : sort === "price"
-              ? order === "asc"
-                ? asc(products.price)
-                : desc(products.price)
-              : order === "asc"
-                ? asc(products.createdAt)
-                : desc(products.createdAt)
-        )
+      conditions.push(ilike(products.name, `%${search}%`));
+    }
+
+    // Execute query with pagination and sorting
+    let data;
+    if (sort === "name") {
+      data = await db
+        .select()
+        .from(products)
+        .where(conditions.length ? conditions[0] : undefined)
+        .orderBy(order === "asc" ? asc(products.name) : desc(products.name))
+        .limit(limit)
+        .offset(offset);
+    } else if (sort === "price") {
+      data = await db
+        .select()
+        .from(products)
+        .where(conditions.length ? conditions[0] : undefined)
+        .orderBy(order === "asc" ? asc(products.price) : desc(products.price))
         .limit(limit)
         .offset(offset);
     } else {
-      // No filters
-      data = await selectQuery
+      data = await db
+        .select()
+        .from(products)
+        .where(conditions.length ? conditions[0] : undefined)
         .orderBy(
-          sort === "name"
-            ? order === "asc"
-              ? asc(products.name)
-              : desc(products.name)
-            : sort === "price"
-              ? order === "asc"
-                ? asc(products.price)
-                : desc(products.price)
-              : order === "asc"
-                ? asc(products.createdAt)
-                : desc(products.createdAt)
+          order === "asc" ? asc(products.createdAt) : desc(products.createdAt)
         )
         .limit(limit)
         .offset(offset);
     }
 
     // Count total items for pagination
-    let totalItems;
-    const countQuery = db.select({ count: count() }).from(products);
+    const countResult = await db
+      .select({ count: count() })
+      .from(products)
+      .where(conditions.length ? conditions[0] : undefined);
 
-    if (search) {
-      const countResult = await countQuery.where(
-        ilike(products.name, `%${search}%`)
-      );
-      totalItems = Number(countResult[0].count);
-    } else {
-      const countResult = await countQuery;
-      totalItems = Number(countResult[0].count);
-    }
-
+    const totalItems = Number(countResult[0].count);
     const totalPages = Math.ceil(totalItems / limit);
 
     return c.json({
