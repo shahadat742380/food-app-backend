@@ -1,10 +1,9 @@
 {
-  "name": "7hills-backend",
+  "name": "food-app",
   "scripts": {
     "dev": "wrangler dev --env local",
     "dev:remote": "wrangler dev --remote --env local",
     "deploy": "wrangler deploy --minify --env production",
-    "deploy:dev": "wrangler deploy --minify --env development",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio"

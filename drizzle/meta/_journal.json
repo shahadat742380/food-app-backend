@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1745316781852,
-      "tag": "0000_majestic_tarantula",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1745388161067,
-      "tag": "0001_puzzling_paladin",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1745391543112,
-      "tag": "0002_sudden_vermin",
+      "when": 1745474044481,
+      "tag": "0000_free_night_nurse",
       "breakpoints": true
     }
   ]

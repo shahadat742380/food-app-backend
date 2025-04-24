@@ -81,45 +81,39 @@ createOrder.post("/", async (c) => {
       isUnique = existingOrder.length === 0;
     }
 
-    // 5. Create the order in a transaction
-    let newOrder: any;
-    let orderItemsResult;
+    // 5. Create the order (without transaction)
+    // Create order
+    const orderResult = await db
+      .insert(orders)
+      .values({
+        userId: user.id,
+        orderNumber,
+        tokenNumber,
+        subtotal: subtotal.toString(),
+        gst: gst.toString(),
+        total: total.toString(),
+        status: "completed",
+      })
+      .returning();
 
-    // Start a transaction
-    await db.transaction(async (tx) => {
-      // Create order
-      const orderResult = await tx
-        .insert(orders)
-        .values({
-          userId: user.id,
-          orderNumber,
-          tokenNumber,
-          subtotal: subtotal.toString(),
-          gst: gst.toString(),
-          total: total.toString(),
-          status: "completed",
-        })
-        .returning();
+    const newOrder = orderResult[0];
 
-      newOrder = orderResult[0];
+    // Create order items
+    const orderItemsValues = userCartItems.map((item) => ({
+      orderId: newOrder.id,
+      productId: item.productId,
+      productName: item.product.name,
+      price: item.product.price.toString(),
+      quantity: item.quantity,
+    }));
 
-      // Create order items
-      const orderItemsValues = userCartItems.map((item) => ({
-        orderId: newOrder.id,
-        productId: item.productId,
-        productName: item.product.name,
-        price: item.product.price.toString(),
-        quantity: item.quantity,
-      }));
+    const orderItemsResult = await db
+      .insert(orderItems)
+      .values(orderItemsValues)
+      .returning();
 
-      orderItemsResult = await tx
-        .insert(orderItems)
-        .values(orderItemsValues)
-        .returning();
-
-      // Clear cart after successful order creation
-      await tx.delete(cartItems).where(eq(cartItems.userId, user.id));
-    });
+    // Clear cart after successful order creation
+    await db.delete(cartItems).where(eq(cartItems.userId, user.id));
 
     // 6. Return the created order with items
     return c.json(
